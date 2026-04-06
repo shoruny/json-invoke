@@ -41,6 +41,10 @@ pub enum RpcError {
 }
 
 impl RpcError {
+    pub fn error(code: i32, message: String) -> RpcError {
+        RpcError::BusinessError(code, message)
+    }
+
     // 转换为符合规范的 (code, message)
     pub fn code_msg(&self) -> (i32, String) {
         match self {

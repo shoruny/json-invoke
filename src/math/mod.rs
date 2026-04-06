@@ -39,8 +39,11 @@ pub struct SubArgs {
 #[async_trait]
 impl AsyncHandler for SubArgs {
     async fn execute(self) -> Result<Value, RpcError> {
-        // Ok(to_json_num(self.a - self.b))
-        Err(RpcError::BusinessError(500, "eee".into()))
+        if self.a < 100f64 {
+            Ok(to_json_num(self.a - self.b))
+        } else {
+            Err(RpcError::error(500, "eee".into()))
+        }
     }
 }
 
