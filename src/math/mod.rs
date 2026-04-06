@@ -12,6 +12,7 @@ use crate::{to_json_num, AsyncHandler};
 #[serde(tag = "method", content = "params", rename_all = "snake_case")] // 关键：JSON 结构映射
 #[enum_dispatch(AsyncHandler)] // 关键点：告诉枚举去分发这个 Trait
 pub enum Methods {
+    #[serde(rename = "math:add")]
     Add(AddArgs),
     Sub(SubArgs),
     Mul(MulArgs),

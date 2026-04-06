@@ -116,9 +116,38 @@ fn jsonrpc_error(id: Option<serde_json::Value>, code: i32, message: &str) -> Res
     (StatusCode::OK, Json(body)).into_response() // 注意：RPC 规范通常返回 200 OK，内部带错误码
 }
 
-// 2. 创建自定义提取器
+// websocket提取器
 pub struct RpcJson<T>(pub T, pub Option<Value>);
+impl<T> RpcJson<T>
+where
+    T: serde::de::DeserializeOwned,
+{
+    /// 专门为 WebSocket 设计的解析函数
+    pub fn from_str(text: &str) -> Result<Self, Response> {
+        // 1. 基础 JSON 解析 (Parse error)
+        let full_value: Value =
+            serde_json::from_str(text).map_err(|_| jsonrpc_error(None, -32700, "Parse error"))?;
 
+        // 2. 提取 ID
+        let id = full_value.get("id").cloned();
+
+        // 3. 业务解析 (Method not found / Invalid params)
+        match serde_json::from_value::<T>(full_value) {
+            Ok(payload) => Ok(RpcJson(payload, id)),
+            Err(e) => {
+                let err_msg = e.to_string();
+                let code = if err_msg.contains("unknown variant") {
+                    -32601 // Method not found (找不到这个冒号分隔的方法名)
+                } else {
+                    -32602 // Invalid params (参数对不上)
+                };
+                Err(jsonrpc_error(id, code, &err_msg))
+            }
+        }
+    }
+}
+
+// http 提取器
 impl<S, T> FromRequest<S> for RpcJson<T>
 where
     T: serde::de::DeserializeOwned,

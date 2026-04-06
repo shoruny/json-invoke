@@ -1,5 +1,6 @@
-use crate::{ AsyncHandler, JsonRpcResponse};
+use crate::{ AsyncHandler, JsonRpcResponse, RpcJson};
 use axum::extract::ws::{Message, WebSocket};
+use axum::response::Response;
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
 use serde::Deserialize;
@@ -43,6 +44,11 @@ struct S {
 }
 fn verify_token(token: String) -> Option<S> {
     Some(S { name: token })
+}
+async fn response_to_string(res: Response) -> Result<String, ()> {
+    use axum::body::to_bytes;
+    let bytes = to_bytes(res.into_body(), 1024 * 10).await.map_err(|_| ())?;
+    String::from_utf8(bytes.to_vec()).map_err(|_| ())
 }
 pub async fn handle_socket<M>(socket: WebSocket, state: AppState, conn_id: u32)
 where
@@ -106,20 +112,28 @@ where
             if let Message::Text(text) = msg {
                 // 1. 尝试解析请求 (这里复用你的 Methods 枚举)
                 // 假设我们定义了一个通用的 RpcRequest<T> 结构体
-                if let Ok(packet) = serde_json::from_str::<IncomingPacket<M>>(&text) {
-                    let id = packet.id.clone();
-                    let need_response = id.is_some(); // 不含id，直接返回
-                    let result = packet.method_call.execute().await; // 依然是 enum_dispatch！
+                match RpcJson::<IncomingPacket<M>>::from_str(&text) {
+                    Ok(RpcJson(packet, id)) => {
+                        let id = id.clone();
+                        let need_response = id.is_some(); // 不含id，直接返回
+                        let result = packet.method_call.execute().await; // 依然是 enum_dispatch！
 
-                    // 3. 构造响应并转回 JSON 字符串
-                    let resp = JsonRpcResponse::from_result(id, result);
+                        // 3. 构造响应并转回 JSON 字符串
+                        let resp = JsonRpcResponse::from_result(id, result);
 
-                    if !need_response {
-                        continue;
-                    }
+                        if !need_response {
+                            continue;
+                        }
 
-                    if let Ok(json_str) = serde_json::to_string(&resp) {
-                        let _ = tx_clone.send(json_str.into()).await;
+                        if let Ok(json_str) = serde_json::to_string(&resp) {
+                            let _ = tx_clone.send(json_str.into()).await;
+                        }
+                    } ,Err(error_response) => {
+                        // 解析失败，error_response 已经是按照 JSON-RPC 标准构造好的 Response
+                        // 我们需要把 Response 里的 Body 转回字符串发给 WS 客户端
+                        if let Ok(body_str) = response_to_string(error_response).await {
+                            let _ = tx.send(body_str).await;
+                        }
                     }
                 }
             }
