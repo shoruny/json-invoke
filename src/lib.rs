@@ -1,4 +1,6 @@
+pub mod headers;
 pub mod math;
+pub mod ws;
 
 use async_trait::async_trait;
 use axum::{
