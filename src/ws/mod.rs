@@ -1,8 +1,9 @@
-use crate::{math::Methods, AsyncHandler, JsonRpcResponse};
+use crate::{ AsyncHandler, JsonRpcResponse};
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::stream::StreamExt;
 use futures_util::SinkExt;
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -12,11 +13,11 @@ use tokio::sync::mpsc::Sender;
 use tokio::time::timeout;
 
 #[derive(Deserialize)]
-pub struct IncomingPacket {
+pub struct IncomingPacket<M> {
     #[serde(default, deserialize_with = "deserialize_optional_id")]
     pub id: Option<Value>,
     #[serde(flatten)] // 这里的 flatten 是灵魂
-    pub method_call: Methods,
+    pub method_call: M,
 }
 // 这是一个专门处理此逻辑的辅助函数
 fn deserialize_optional_id<'de, D>(deserializer: D) -> Result<Option<Value>, D::Error>
@@ -43,7 +44,9 @@ struct S {
 fn verify_token(token: String) -> Option<S> {
     Some(S { name: token })
 }
-pub async fn handle_socket(socket: WebSocket, state: AppState, conn_id: u32) {
+pub async fn handle_socket<M>(socket: WebSocket, state: AppState, conn_id: u32)
+where
+    M: DeserializeOwned + AsyncHandler + Send + 'static {
     let (mut sender, mut receiver) = socket.split();
 
     let (tx, mut rx) = mpsc::channel::<String>(100);
@@ -103,7 +106,7 @@ pub async fn handle_socket(socket: WebSocket, state: AppState, conn_id: u32) {
             if let Message::Text(text) = msg {
                 // 1. 尝试解析请求 (这里复用你的 Methods 枚举)
                 // 假设我们定义了一个通用的 RpcRequest<T> 结构体
-                if let Ok(packet) = serde_json::from_str::<IncomingPacket>(&text) {
+                if let Ok(packet) = serde_json::from_str::<IncomingPacket<M>>(&text) {
                     let id = packet.id.clone();
                     let need_response = id.is_some(); // 不含id，直接返回
                     let result = packet.method_call.execute().await; // 依然是 enum_dispatch！

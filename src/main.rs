@@ -29,7 +29,7 @@ async fn handler(
 }
 
 pub async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, state, 0u32))
+    ws.on_upgrade(move |socket| handle_socket::<Methods>(socket, state, 0u32))
 }
 
 #[tokio::main]
