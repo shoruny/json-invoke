@@ -1,10 +1,10 @@
 use crate::{
-    rpc::{to_json_num, AsyncHandler, RpcError},
+    rpc::{AsyncHandler, RpcError},
     utils::decimal::ToDecimal,
 };
+
 use async_trait::async_trait;
 use enum_dispatch::enum_dispatch;
-use rust_decimal::prelude::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -36,7 +36,7 @@ pub enum Methods {
 #[async_trait]
 impl AsyncHandler for MathAddArgs<AddArgs> {
     async fn execute(self) -> Result<Value, RpcError> {
-        Ok(to_json_num(self.a + self.b))
+        Ok((self.a + self.b).as_json_number())
     }
 }
 
@@ -44,7 +44,7 @@ impl AsyncHandler for MathAddArgs<AddArgs> {
 impl AsyncHandler for MathAddArgs<SubArgs> {
     async fn execute(self) -> Result<Value, RpcError> {
         if self.a < 100f64 {
-            Ok(to_json_num(self.a - self.b))
+            Ok((self.a - self.b).as_json_number())
         } else {
             Err(RpcError::error(500, "eee".into()))
         }
@@ -56,6 +56,6 @@ impl AsyncHandler for MathAddArgs<MulArgs> {
     async fn execute(self) -> Result<Value, RpcError> {
         let res = self.a.as_decimal() * self.b.as_decimal();
         // *dec!(self.b);
-        Ok(to_json_num(res.to_f64().unwrap_or_default()))
+        Ok(res.as_f64().as_json_number())
     }
 }

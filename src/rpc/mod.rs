@@ -2,7 +2,10 @@ use std::collections::BTreeMap;
 
 use serde::Deserialize;
 
-use crate::math::{AddArgs, MathAddArgs, Methods, MulArgs, SubArgs};
+use crate::{
+    math::{AddArgs, MathAddArgs, Methods, MulArgs, SubArgs},
+    utils::decimal::ToDecimal,
+};
 use enum_dispatch::enum_dispatch;
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -21,14 +24,6 @@ use axum::{
 pub trait AsyncHandler {
     // 假设每个处理逻辑都需要访问 State 和 用户 ID
     async fn execute(self) -> Result<Value, RpcError>;
-}
-
-pub fn to_json_num(n: f64) -> serde_json::Value {
-    if n == n.trunc() {
-        json!(n as i64)
-    } else {
-        json!(n)
-    }
 }
 
 #[derive(Debug)]
@@ -231,7 +226,7 @@ where
                     Value::Number(n) => {
                         // 去掉数字后边的无效0
                         if let Some(f) = n.as_f64() {
-                            to_json_num(f).to_string()
+                            f.as_json_number().to_string()
                         } else {
                             n.to_string()
                         }
