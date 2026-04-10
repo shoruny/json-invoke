@@ -8,7 +8,10 @@ use axum::{
 use axum_extra::TypedHeader;
 use chat::{
     headers::signature::XSignature,
-    math::Methods,
+    math::{
+        command::{self, Command},
+        // Methods,
+    },
     ws::{handle_socket, AppState},
     AsyncHandler, JsonRpcResponse, RpcJson,
 };
@@ -20,7 +23,7 @@ use tokio::net::TcpListener;
 
 async fn handler(
     TypedHeader(XSignature(sign)): TypedHeader<XSignature>,
-    RpcJson(payload, id): RpcJson<Methods>,
+    RpcJson(payload, id): RpcJson<command::Command>,
 ) -> impl IntoResponse {
     println!("{}", sign);
     let result = payload.execute().await;
@@ -29,7 +32,7 @@ async fn handler(
 }
 
 pub async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket::<Methods>(socket, state, 0u32))
+    ws.on_upgrade(move |socket| handle_socket::<Command>(socket, state, 0u32))
 }
 
 #[tokio::main]
