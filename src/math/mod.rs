@@ -1,6 +1,6 @@
 use crate::{
     rpc::{to_json_num, AsyncHandler, RpcError},
-    utils::decimal::ToDec,
+    utils::decimal::ToDecimal,
 };
 use async_trait::async_trait;
 use enum_dispatch::enum_dispatch;
