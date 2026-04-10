@@ -6,7 +6,7 @@ use axum::{
 };
 
 use axum_extra::TypedHeader;
-use chat::{
+use jsonrpc::{
     headers::signature::XSignature,
     math::Methods,
     rpc::{AsyncHandler, JsonRpcResponse, RpcJson, RpcRequest},
@@ -27,20 +27,21 @@ async fn handler(
     Json(resp)
 }
 
-pub async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
+pub async fn _ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_socket::<Methods>(socket, state, 0u32))
 }
 
 #[tokio::main]
 async fn main() {
-    let state = AppState {
+    let _state = AppState {
         lobby: Arc::new(RwLock::new(HashMap::new())),
         rooms: Arc::new(RwLock::new(HashMap::new())),
     };
 
     let app = Router::new()
-        .route("/ws", get(ws_handler))
-        .with_state(state)
+        .route("/", get(|| async { "hello" }))
+        // .route("/ws", get(_ws_handler))
+        // .with_state(_state)
         .route("/http/rpc/math", post(handler));
     let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
     axum::serve(listener, app).await.unwrap();
