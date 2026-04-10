@@ -9,8 +9,8 @@ use axum_extra::TypedHeader;
 use chat::{
     headers::signature::XSignature,
     math::Methods,
+    rpc::{AsyncHandler, JsonRpcResponse, RpcJson, RpcRequest},
     ws::{handle_socket, AppState},
-    AsyncHandler, JsonRpcResponse, RpcJson,
 };
 use std::{
     collections::HashMap,
@@ -19,10 +19,9 @@ use std::{
 use tokio::net::TcpListener;
 
 async fn handler(
-    TypedHeader(XSignature(sign)): TypedHeader<XSignature>,
-    RpcJson(payload, id): RpcJson<Methods>,
+    TypedHeader(XSignature(_sign)): TypedHeader<XSignature>,
+    RpcJson(payload, id): RpcJson<RpcRequest<Methods>>,
 ) -> impl IntoResponse {
-    println!("{}", sign);
     let result = payload.execute().await;
     let resp = JsonRpcResponse::from_result(id, result);
     Json(resp)
