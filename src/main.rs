@@ -38,6 +38,7 @@ async fn main() {
         lobby: Arc::new(RwLock::new(HashMap::new())),
         rooms: Arc::new(RwLock::new(HashMap::new())),
     };
+
     let app = Router::new()
         .route("/ws", get(ws_handler))
         .with_state(state)

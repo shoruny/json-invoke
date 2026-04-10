@@ -71,7 +71,6 @@ where
                         login_at: 0u64,
                         tx: tx.clone(),
                         rooms: vec![],
-                        // ...
                     })
                 } else {
                     let _ = sender.send(Message::Text("Auth Failed".into())).await;
