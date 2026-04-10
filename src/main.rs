@@ -8,12 +8,9 @@ use axum::{
 use axum_extra::TypedHeader;
 use chat::{
     headers::signature::XSignature,
-    math::{
-        command::{self, Command},
-        // Methods,
-    },
+    math::command::{self, Command},
+    rpc::{AsyncHandler, JsonRpcResponse, RpcJson},
     ws::{handle_socket, AppState},
-    AsyncHandler, JsonRpcResponse, RpcJson,
 };
 use std::{
     collections::HashMap,

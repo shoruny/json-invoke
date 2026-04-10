@@ -1,4 +1,4 @@
-use crate::{ AsyncHandler, JsonRpcResponse, RpcJson};
+use crate::rpc::{ AsyncHandler, JsonRpcResponse, RpcJson};
 use axum::extract::ws::{Message, WebSocket};
 use axum::response::Response;
 use futures_util::stream::StreamExt;
