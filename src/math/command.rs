@@ -6,13 +6,32 @@ use crate::rpc::{to_json_num, AsyncHandler, RpcError};
 
 #[derive(Deserialize)]
 #[serde(tag = "method", content = "params")]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
 pub enum Command {
-    Add { a: f64, b: f64 },
-    Add2 { a: f64, b: f64, c: f64 },
-    Sub { a: f64, b: f64 },
-    Mul { a: f64, b: f64 },
-    Div { a: f64, b: f64 },
+    #[serde(rename = "math:add")]
+    #[serde(alias = "add")]
+    Add {
+        #[serde(alias = "p1")]
+        a: f64,
+        b: f64,
+    },
+    Add2 {
+        a: f64,
+        b: f64,
+        c: f64,
+    },
+    Sub {
+        a: f64,
+        b: f64,
+    },
+    Mul {
+        a: f64,
+        b: f64,
+    },
+    Div {
+        a: f64,
+        b: f64,
+    },
 }
 
 #[async_trait]
