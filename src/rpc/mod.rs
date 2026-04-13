@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::{
     math::{AddArgs, MathAddArgs, Methods, MulArgs, SubArgs},
-    utils::decimal::ToDecimal,
+    utils::convert::ToDecimal,
 };
 use enum_dispatch::enum_dispatch;
 use serde::Serialize;

@@ -1,6 +1,6 @@
 use crate::{
     rpc::{AsyncHandler, RpcError},
-    utils::decimal::ToDecimal,
+    utils::convert::ToDecimal,
 };
 
 use async_trait::async_trait;
