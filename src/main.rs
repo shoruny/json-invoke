@@ -12,9 +12,10 @@ use jsonrpc::{
     rpc::{AsyncHandler, JsonRpcResponse, RpcJson, RpcRequest},
     ws::{handle_socket, AppState},
 };
+use parking_lot::RwLock;
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock},
+    sync::{Arc},
 };
 use tokio::net::TcpListener;
 
@@ -40,8 +41,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(|| async { "hello" }))
-        // .route("/ws", get(_ws_handler))
-        // .with_state(_state)
+        .route("/ws", get(_ws_handler))
+        .with_state(_state)
         .route("/http/rpc/math", post(handler));
     let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
     axum::serve(listener, app).await.unwrap();

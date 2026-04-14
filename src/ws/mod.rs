@@ -7,7 +7,8 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use parking_lot::RwLock;
 use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
@@ -93,7 +94,7 @@ where
         println!(
             "用户 {} 上线，当前在线人数: {}",
             conn_id,
-            state.lobby.read().unwrap().len()
+            state.lobby.read().len()
         );
     }
 
@@ -151,7 +152,7 @@ where
         println!(
             "用户 {} 下线，当前在线人数: {}",
             conn_id,
-            state.lobby.read().unwrap().len()
+            state.lobby.read().len()
         );
     }
 }
@@ -177,13 +178,13 @@ impl AppState {
 
         // 1. 插入到大厅，并拿回可能存在的“旧用户”
         let old_user = {
-            let mut lobby = self.lobby.write().unwrap();
+            let mut lobby = self.lobby.write();
             lobby.insert(conn_id, user) // insert 返回 Option<Arc<UserInfo>>
         };
 
         // 2. 如果存在旧用户，执行清理逻辑（踢人）
         if let Some(old_user) = old_user {
-            let mut rooms = self.rooms.write().unwrap();
+            let mut rooms = self.rooms.write();
             for room_id in &old_user.rooms {
                 if let Some(room) = rooms.get_mut(room_id) {
                     // 清理该房间里的旧引用
@@ -199,12 +200,12 @@ impl AppState {
     }
     pub fn leave(&self, conn_id: u32) {
         let user = {
-            let mut lobby = self.lobby.write().unwrap();
+            let mut lobby = self.lobby.write();
             lobby.remove(&conn_id) // 直接 remove 会返回 Option<Arc<UserInfo>>
         };
         let Some(user) = user else { return };
 
-        let mut rooms = self.rooms.write().unwrap();
+        let mut rooms = self.rooms.write();
         for room_id in &user.rooms {
             if let Some(room) = rooms.get_mut(room_id) {
                 room.retain(|u| !Arc::ptr_eq(u, &user));

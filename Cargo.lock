@@ -539,6 +539,7 @@ dependencies = [
  "axum-extra",
  "enum_dispatch",
  "futures-util",
+ "parking_lot",
  "rust_decimal",
  "rust_decimal_macros",
  "serde",
